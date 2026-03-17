@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Rol {
+  admin
+  investigador
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  nombre        String
+  email         String   @unique
+  password_hash String
+  rol           Rol      @default(investigador)
+  activo        Boolean  @default(true)
+  created_at    DateTime @default(now())
+}
+
+model Neonato {
+  id                    String        @id @default(uuid())
+  codigo_rn             String        @unique
+  sexo                  String
+  eg_semanas            Int
+  eg_dias               Int
+  peso_nacer            Float
+  diagnostico_principal String
+  dias_estancia         Int
+  created_at            DateTime      @default(now())
+  observaciones         Observacion[]
+}
+
+model Observacion {
+  id              String   @id @default(uuid())
+  neonato_id      String
+  neonato         Neonato  @relation(fields: [neonato_id], references: [id], onDelete: Cascade)
+  fecha           String
+  hora            String
+  observador      String
+  posicion_comoda Int
+  spo2            Int
+  fr              Int
+  fc              Int
+  observaciones   String?
+  created_at      DateTime @default(now())
+}
