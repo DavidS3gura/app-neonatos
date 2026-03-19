@@ -5,7 +5,11 @@ import {
   observacionService,
   type Neonato,
 } from '@/services/api';
-import { getSpo2Scale } from '@/lib/observation-scales';
+import {
+  getDefaultScale,
+  getSpo2Scale,
+  type ScaleLevel,
+} from '@/lib/observation-scales';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ScaleInput from '@/components/ScaleInput';
@@ -32,6 +36,36 @@ const initialForm = (): ObservacionForm => ({
   fc: 0,
   observaciones: '',
 });
+
+function ScaleInterpretationCard({
+  title,
+  info,
+}: {
+  title: string;
+  info: ScaleLevel | null;
+}) {
+  if (!info) return null;
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+      <p className="text-sm font-semibold text-primary">{title}</p>
+      <div className="text-sm space-y-1">
+        <p>
+          <strong>Puntaje:</strong> {info.score}
+        </p>
+        <p>
+          <strong>Categoría:</strong> {info.category}
+        </p>
+        <p>
+          <strong>Rango:</strong> {info.range}
+        </p>
+        <p>
+          <strong>Interpretación:</strong> {info.interpretation}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function ObservacionesPage() {
   const [neonatos, setNeonatos] = useState<Neonato[]>([]);
@@ -67,7 +101,16 @@ export default function ObservacionesPage() {
     [neonatos, selectedNeonato]
   );
 
+  const posicionComodaInfo = useMemo(
+    () => getDefaultScale(form.posicion_comoda),
+    [form.posicion_comoda]
+  );
+
   const spo2Info = useMemo(() => getSpo2Scale(form.spo2), [form.spo2]);
+
+  const frInfo = useMemo(() => getDefaultScale(form.fr), [form.fr]);
+
+  const fcInfo = useMemo(() => getDefaultScale(form.fc), [form.fc]);
 
   const validateForm = () => {
     if (!selectedNeonato) return 'Debe seleccionar un neonato';
@@ -305,54 +348,55 @@ export default function ObservacionesPage() {
                 <div className="clinical-card space-y-6">
                   <h2 className="text-lg font-semibold">Escalas Clínicas</h2>
 
-                  <ScaleInput
-                    label="Posición Cómoda"
-                    value={form.posicion_comoda}
-                    onChange={(v) => setForm({ ...form, posicion_comoda: v })}
-                  />
+                  <div className="space-y-3">
+                    <ScaleInput
+                      label="Posición Cómoda"
+                      value={form.posicion_comoda}
+                      onChange={(v) =>
+                        setForm({ ...form, posicion_comoda: Number(v) })
+                      }
+                    />
+                    <ScaleInterpretationCard
+                      title="Interpretación de Posición Cómoda"
+                      info={posicionComodaInfo}
+                    />
+                  </div>
 
                   <div className="space-y-3">
                     <ScaleInput
                       label="SpO₂"
                       value={form.spo2}
-                      onChange={(v) => setForm({ ...form, spo2: v })}
+                      onChange={(v) => setForm({ ...form, spo2: Number(v) })}
                     />
-
-                    {spo2Info && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                        <p className="text-sm font-semibold text-primary">
-                          Interpretación de SpO₂
-                        </p>
-                        <div className="text-sm space-y-1">
-                          <p>
-                            <strong>Puntaje:</strong> {spo2Info.score}
-                          </p>
-                          <p>
-                            <strong>Categoría:</strong> {spo2Info.category}
-                          </p>
-                          <p>
-                            <strong>Rango:</strong> {spo2Info.range}
-                          </p>
-                          <p>
-                            <strong>Interpretación:</strong>{' '}
-                            {spo2Info.interpretation}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    <ScaleInterpretationCard
+                      title="Interpretación de SpO₂"
+                      info={spo2Info}
+                    />
                   </div>
 
-                  <ScaleInput
-                    label="Frecuencia Respiratoria (FR)"
-                    value={form.fr}
-                    onChange={(v) => setForm({ ...form, fr: v })}
-                  />
+                  <div className="space-y-3">
+                    <ScaleInput
+                      label="Frecuencia Respiratoria (FR)"
+                      value={form.fr}
+                      onChange={(v) => setForm({ ...form, fr: Number(v) })}
+                    />
+                    <ScaleInterpretationCard
+                      title="Interpretación de Frecuencia Respiratoria"
+                      info={frInfo}
+                    />
+                  </div>
 
-                  <ScaleInput
-                    label="Frecuencia Cardíaca (FC)"
-                    value={form.fc}
-                    onChange={(v) => setForm({ ...form, fc: v })}
-                  />
+                  <div className="space-y-3">
+                    <ScaleInput
+                      label="Frecuencia Cardíaca (FC)"
+                      value={form.fc}
+                      onChange={(v) => setForm({ ...form, fc: Number(v) })}
+                    />
+                    <ScaleInterpretationCard
+                      title="Interpretación de Frecuencia Cardíaca"
+                      info={fcInfo}
+                    />
+                  </div>
                 </div>
 
                 <div className="clinical-card space-y-4">
