@@ -15,15 +15,45 @@ import {
 import { useState } from "react";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", module: "dashboard" },
-  { label: "Neonatos", icon: Baby, path: "/neonatos", module: "neonatos" },
-  { label: "Observaciones", icon: ClipboardList, path: "/observaciones", module: "observaciones" },
-  { label: "Historial", icon: History, path: "/historial", module: "historial" },
-  { label: "Exportar", icon: Download, path: "/exportar", module: "exportar" },
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    path: "/dashboard",
+    moduleName: "dashboard",
+  },
+  {
+    label: "Neonatos",
+    icon: Baby,
+    path: "/neonatos",
+    moduleName: "neonatos",
+  },
+  {
+    label: "Observaciones",
+    icon: ClipboardList,
+    path: "/observaciones",
+    moduleName: "observaciones",
+  },
+  {
+    label: "Historial",
+    icon: History,
+    path: "/historial",
+    moduleName: "historial",
+  },
+  {
+    label: "Exportar",
+    icon: Download,
+    path: "/exportar",
+    moduleName: "exportar",
+  },
 ];
 
 const adminItems = [
-  { label: "Usuarios", icon: Users, path: "/usuarios", module: "usuarios" },
+  {
+    label: "Usuarios",
+    icon: Users,
+    path: "/usuarios",
+    moduleName: "usuarios",
+  },
 ];
 
 export default function AppSidebar() {
@@ -33,12 +63,12 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const visibleNavItems = user
-    ? navItems.filter((item) => canAccessModule(user.rol, item.module))
+    ? navItems.filter((item) => canAccessModule(user.rol, item.moduleName))
     : [];
 
-  const visibleAdminItems = user?.rol === "admin" ? adminItems : [];
-
-  const allItems = [...visibleNavItems, ...visibleAdminItems];
+  const allItems = user?.rol === "admin"
+    ? [...visibleNavItems, ...adminItems]
+    : visibleNavItems;
 
   return (
     <>
@@ -63,6 +93,7 @@ export default function AppSidebar() {
         <nav className="flex-1 p-4 space-y-1">
           {allItems.map((item) => {
             const active = location.pathname === item.path;
+            const Icon = item.icon;
 
             return (
               <button
@@ -78,7 +109,7 @@ export default function AppSidebar() {
                       : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                   }`}
               >
-                <item.icon size={20} />
+                <Icon size={20} />
                 {item.label}
               </button>
             );

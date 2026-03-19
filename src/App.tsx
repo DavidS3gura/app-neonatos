@@ -16,29 +16,32 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+type ProtectedRouteProps = {
+  children: JSX.Element;
+  adminOnly?: boolean;
+  moduleName?: string;
+};
+
 function ProtectedRoute({
   children,
   adminOnly = false,
-  module,
-}: {
-  children: React.ReactNode;
-  adminOnly?: boolean;
-  module?: string;
-}) {
+  moduleName,
+}: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuth();
 
-  if (!isAuthenticated) return <Navigate to="/" replace />;
-  if (!user) return <Navigate to="/" replace />;
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/" replace />;
+  }
 
   if (adminOnly && user.rol !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (module && !canAccessModule(user.rol, module)) {
+  if (moduleName && !canAccessModule(user.rol, moduleName)) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
 function AppRoutes() {
@@ -53,7 +56,7 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute module="dashboard">
+          <ProtectedRoute moduleName="dashboard">
             <DashboardPage />
           </ProtectedRoute>
         }
@@ -61,7 +64,7 @@ function AppRoutes() {
       <Route
         path="/neonatos"
         element={
-          <ProtectedRoute module="neonatos">
+          <ProtectedRoute moduleName="neonatos">
             <NeonatosPage />
           </ProtectedRoute>
         }
@@ -69,7 +72,7 @@ function AppRoutes() {
       <Route
         path="/observaciones"
         element={
-          <ProtectedRoute module="observaciones">
+          <ProtectedRoute moduleName="observaciones">
             <ObservacionesPage />
           </ProtectedRoute>
         }
@@ -77,7 +80,7 @@ function AppRoutes() {
       <Route
         path="/historial"
         element={
-          <ProtectedRoute module="historial">
+          <ProtectedRoute moduleName="historial">
             <HistorialPage />
           </ProtectedRoute>
         }
@@ -85,7 +88,7 @@ function AppRoutes() {
       <Route
         path="/exportar"
         element={
-          <ProtectedRoute module="exportar">
+          <ProtectedRoute moduleName="exportar">
             <ExportarPage />
           </ProtectedRoute>
         }
@@ -93,7 +96,7 @@ function AppRoutes() {
       <Route
         path="/usuarios"
         element={
-          <ProtectedRoute adminOnly module="usuarios">
+          <ProtectedRoute adminOnly moduleName="usuarios">
             <UsuariosPage />
           </ProtectedRoute>
         }
@@ -103,18 +106,18 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
