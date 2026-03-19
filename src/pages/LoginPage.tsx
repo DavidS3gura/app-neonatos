@@ -70,7 +70,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
-          admin@hamacaterapia.local / Admin12345
+          Utilice las credenciales dadas por su administrador
         </p>
       </div>
     </div>
