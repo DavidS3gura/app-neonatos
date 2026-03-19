@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@hamacaterapia.local');
-  const [password, setPassword] = useState('Admin12345');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,6 +16,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       const ok = await login(email, password);
       if (ok) {
@@ -44,18 +45,23 @@ export default function LoginPage() {
             <Input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               className="h-12 text-base"
+              placeholder="Ingrese su correo"
+              autoComplete="username"
               required
             />
           </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Contraseña</label>
             <Input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               className="h-12 text-base"
+              placeholder="Ingrese su contraseña"
+              autoComplete="current-password"
               required
             />
           </div>
@@ -64,7 +70,11 @@ export default function LoginPage() {
             <p className="text-sm text-destructive font-medium">{error}</p>
           )}
 
-          <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold"
+            disabled={loading}
+          >
             {loading ? 'Iniciando...' : 'Iniciar Sesión'}
           </Button>
         </form>
