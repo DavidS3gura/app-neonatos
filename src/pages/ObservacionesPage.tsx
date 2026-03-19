@@ -6,7 +6,9 @@ import {
   type Neonato,
 } from '@/services/api';
 import {
-  getDefaultScale,
+  getFcScale,
+  getFrScale,
+  getPosicionComodaScale,
   getSpo2Scale,
   type ScaleLevel,
 } from '@/lib/observation-scales';
@@ -37,13 +39,15 @@ const initialForm = (): ObservacionForm => ({
   observaciones: '',
 });
 
+type ScaleInterpretationCardProps = {
+  title: string;
+  info: ScaleLevel | null;
+};
+
 function ScaleInterpretationCard({
   title,
   info,
-}: {
-  title: string;
-  info: ScaleLevel | null;
-}) {
+}: ScaleInterpretationCardProps) {
   if (!info) return null;
 
   return (
@@ -102,15 +106,15 @@ export default function ObservacionesPage() {
   );
 
   const posicionComodaInfo = useMemo(
-    () => getDefaultScale(form.posicion_comoda),
+    () => getPosicionComodaScale(form.posicion_comoda),
     [form.posicion_comoda]
   );
 
   const spo2Info = useMemo(() => getSpo2Scale(form.spo2), [form.spo2]);
 
-  const frInfo = useMemo(() => getDefaultScale(form.fr), [form.fr]);
+  const frInfo = useMemo(() => getFrScale(form.fr), [form.fr]);
 
-  const fcInfo = useMemo(() => getDefaultScale(form.fc), [form.fc]);
+  const fcInfo = useMemo(() => getFcScale(form.fc), [form.fc]);
 
   const validateForm = () => {
     if (!selectedNeonato) return 'Debe seleccionar un neonato';
