@@ -5,6 +5,7 @@ import {
   observacionService,
   type Neonato,
 } from '@/services/api';
+import { getSpo2Scale } from '@/lib/observation-scales';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ScaleInput from '@/components/ScaleInput';
@@ -65,6 +66,8 @@ export default function ObservacionesPage() {
     () => neonatos.find((n) => n.id === selectedNeonato) || null,
     [neonatos, selectedNeonato]
   );
+
+  const spo2Info = useMemo(() => getSpo2Scale(form.spo2), [form.spo2]);
 
   const validateForm = () => {
     if (!selectedNeonato) return 'Debe seleccionar un neonato';
@@ -301,21 +304,50 @@ export default function ObservacionesPage() {
 
                 <div className="clinical-card space-y-6">
                   <h2 className="text-lg font-semibold">Escalas Clínicas</h2>
+
                   <ScaleInput
                     label="Posición Cómoda"
                     value={form.posicion_comoda}
                     onChange={(v) => setForm({ ...form, posicion_comoda: v })}
                   />
-                  <ScaleInput
-                    label="SpO₂"
-                    value={form.spo2}
-                    onChange={(v) => setForm({ ...form, spo2: v })}
-                  />
+
+                  <div className="space-y-3">
+                    <ScaleInput
+                      label="SpO₂"
+                      value={form.spo2}
+                      onChange={(v) => setForm({ ...form, spo2: v })}
+                    />
+
+                    {spo2Info && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                        <p className="text-sm font-semibold text-primary">
+                          Interpretación de SpO₂
+                        </p>
+                        <div className="text-sm space-y-1">
+                          <p>
+                            <strong>Puntaje:</strong> {spo2Info.score}
+                          </p>
+                          <p>
+                            <strong>Categoría:</strong> {spo2Info.category}
+                          </p>
+                          <p>
+                            <strong>Rango:</strong> {spo2Info.range}
+                          </p>
+                          <p>
+                            <strong>Interpretación:</strong>{' '}
+                            {spo2Info.interpretation}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <ScaleInput
                     label="Frecuencia Respiratoria (FR)"
                     value={form.fr}
                     onChange={(v) => setForm({ ...form, fr: v })}
                   />
+
                   <ScaleInput
                     label="Frecuencia Cardíaca (FC)"
                     value={form.fc}
