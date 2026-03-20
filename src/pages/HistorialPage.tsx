@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { neonatoService, type Neonato, type Observacion } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  neonatoService,
+  observacionService,
+  type Neonato,
+  type Observacion,
+} from '@/services/api';
 import {
   getFcScale,
   getFrScale,
@@ -8,7 +14,7 @@ import {
   getSpo2Scale,
 } from '@/lib/observation-scales';
 import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
+import { Search, X, Trash2 } from 'lucide-react';
 
 type NeonatoWithObservaciones = Neonato & { observaciones?: Observacion[] };
 
@@ -29,29 +35,31 @@ function ScaleSummaryCard({
     <div className="p-3 rounded-lg bg-muted space-y-1">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-xl font-bold">{value}</p>
-      {category && (
-        <p className="text-xs font-medium text-primary">{category}</p>
-      )}
-      {range && (
-        <p className="text-[11px] text-muted-foreground">{range}</p>
-      )}
+      {category && <p className="text-xs font-medium text-primary">{category}</p>}
+      {range && <p className="text-[11px] text-muted-foreground">{range}</p>}
     </div>
   );
 }
 
 export default function HistorialPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.rol?.toLowerCase() === 'admin';
+
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [neonato, setNeonato] = useState<NeonatoWithObservaciones | null>(null);
   const [selectedObservation, setSelectedObservation] = useState<Observacion | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
 
     setLoading(true);
     setNotFound(false);
+    setError('');
 
     try {
       const data = await neonatoService.getByCode(search.trim());
@@ -61,6 +69,67 @@ export default function HistorialPage() {
       setNotFound(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const reloadSelectedNeonato = async () => {
+    if (!neonato) return;
+
+    try {
+      const data = await neonatoService.getByCode(neonato.codigo_rn);
+      setNeonato(data);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo recargar el historial');
+    }
+  };
+
+  const handleDeleteObservation = async (observation: Observacion) => {
+    const confirmed = window.confirm(
+      `¿Seguro que deseas eliminar la observación del ${observation.fecha} a las ${observation.hora}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+      setError('');
+      await observacionService.delete(observation.id);
+
+      if (selectedObservation?.id === observation.id) {
+        setSelectedObservation(null);
+      }
+
+      await reloadSelectedNeonato();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Error al eliminar observación');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteAllObservations = async () => {
+    if (!neonato) return;
+
+    const confirmed = window.confirm(
+      `¿Seguro que deseas eliminar TODAS las observaciones del neonato ${neonato.codigo_rn}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+      setError('');
+      setSelectedObservation(null);
+
+      await observacionService.deleteByNeonato(neonato.id);
+      await reloadSelectedNeonato();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Error al eliminar todas las observaciones');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -133,6 +202,10 @@ export default function HistorialPage() {
               No se encontró el neonato con ese código.
             </p>
           )}
+
+          {error && (
+            <p className="text-destructive text-sm">{error}</p>
+          )}
         </div>
 
         {neonato && (
@@ -168,14 +241,30 @@ export default function HistorialPage() {
             </div>
 
             <div className="clinical-card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">
-                  Observaciones ({observaciones.length})
-                </h2>
-                {dateFilter && (
-                  <p className="text-sm text-muted-foreground">
-                    Filtrado por fecha: {dateFilter}
-                  </p>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Observaciones ({observaciones.length})
+                  </h2>
+                  {dateFilter && (
+                    <p className="text-sm text-muted-foreground">
+                      Filtrado por fecha: {dateFilter}
+                    </p>
+                  )}
+                </div>
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAllObservations}
+                    disabled={actionLoading || observaciones.length === 0}
+                    className="h-10 px-4 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Trash2 size={16} />
+                      Eliminar todas
+                    </span>
+                  </button>
                 )}
               </div>
 
@@ -207,13 +296,29 @@ export default function HistorialPage() {
                             </p>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setSelectedObservation(o)}
-                            className="h-10 px-4 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-sm font-medium"
-                          >
-                            Ver detalle
-                          </button>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedObservation(o)}
+                              className="h-10 px-4 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-sm font-medium"
+                            >
+                              Ver detalle
+                            </button>
+
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteObservation(o)}
+                                disabled={actionLoading}
+                                className="h-10 px-4 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors text-sm font-medium disabled:opacity-50"
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <Trash2 size={16} />
+                                  Eliminar
+                                </span>
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">

@@ -188,6 +188,18 @@ export const observacionService = {
       body: JSON.stringify(data),
     });
   },
+
+  async delete(id: string): Promise<{ message: string }> {
+    return request(`/observaciones/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async deleteByNeonato(neonatoId: string): Promise<{ message: string; count: number }> {
+    return request(`/observaciones/neonato/${neonatoId}/todas`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 export const usuarioService = {
