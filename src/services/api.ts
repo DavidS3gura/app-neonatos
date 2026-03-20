@@ -164,6 +164,13 @@ export const neonatoService = {
       body: JSON.stringify(data),
     });
   },
+
+    async delete(id: string): Promise<{ message: string }> {
+    return request(`/neonatos/${id}`, {
+      method: 'DELETE',
+    });
+  },
+  
 };
 
 export const observacionService = {

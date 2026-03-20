@@ -15,7 +15,9 @@ const neonatoSchema = z.object({
 
 export async function getAll(_req: AuthRequest, res: Response) {
   try {
-    const data = await prisma.neonato.findMany({ orderBy: { created_at: 'desc' } });
+    const data = await prisma.neonato.findMany({
+      orderBy: { created_at: 'desc' },
+    });
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener neonatos' });
@@ -28,7 +30,11 @@ export async function getById(req: AuthRequest, res: Response) {
       where: { id: req.params.id },
       include: { observaciones: { orderBy: { created_at: 'desc' } } },
     });
-    if (!data) return res.status(404).json({ error: 'No encontrado' });
+
+    if (!data) {
+      return res.status(404).json({ error: 'No encontrado' });
+    }
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener neonato' });
@@ -41,7 +47,11 @@ export async function getByCode(req: AuthRequest, res: Response) {
       where: { codigo_rn: req.params.code },
       include: { observaciones: { orderBy: { created_at: 'desc' } } },
     });
-    if (!data) return res.status(404).json({ error: 'No encontrado' });
+
+    if (!data) {
+      return res.status(404).json({ error: 'No encontrado' });
+    }
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: 'Error al buscar neonato' });
@@ -51,10 +61,18 @@ export async function getByCode(req: AuthRequest, res: Response) {
 export async function create(req: AuthRequest, res: Response) {
   try {
     const parsed = neonatoSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
 
-    const exists = await prisma.neonato.findUnique({ where: { codigo_rn: parsed.data.codigo_rn } });
-    if (exists) return res.status(409).json({ error: 'El código RN ya existe' });
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors });
+    }
+
+    const exists = await prisma.neonato.findUnique({
+      where: { codigo_rn: parsed.data.codigo_rn },
+    });
+
+    if (exists) {
+      return res.status(409).json({ error: 'El código RN ya existe' });
+    }
 
     const data = await prisma.neonato.create({ data: parsed.data });
     res.status(201).json(data);
@@ -66,10 +84,46 @@ export async function create(req: AuthRequest, res: Response) {
 export async function update(req: AuthRequest, res: Response) {
   try {
     const parsed = neonatoSchema.partial().safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
-    const data = await prisma.neonato.update({ where: { id: req.params.id }, data: parsed.data });
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors });
+    }
+
+    const data = await prisma.neonato.update({
+      where: { id: req.params.id },
+      data: parsed.data,
+    });
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: 'Error al actualizar neonato' });
+  }
+}
+
+export async function remove(req: AuthRequest, res: Response) {
+  try {
+    const existing = await prisma.neonato.findUnique({
+      where: { id: req.params.id },
+      include: { observaciones: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Neonato no encontrado' });
+    }
+
+    if (existing.observaciones.length > 0) {
+      return res.status(409).json({
+        error:
+          'No se puede eliminar el neonato porque tiene observaciones registradas',
+      });
+    }
+
+    await prisma.neonato.delete({
+      where: { id: req.params.id },
+    });
+
+    return res.json({ message: 'Neonato eliminado correctamente' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Error al eliminar neonato' });
   }
 }
