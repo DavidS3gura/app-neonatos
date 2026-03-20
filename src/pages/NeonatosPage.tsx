@@ -600,18 +600,34 @@ export default function NeonatosPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground text-right">
+                <div className="flex items-center gap-3 flex-wrap justify-end">
+                  <span className="text-sm text-muted-foreground text-right max-w-xs">
                     {n.diagnostico_principal}
                   </span>
+
                   <Button
+                    type="button"
                     variant="outline"
                     size="icon"
-                    className="h-12 w-12"
+                    className="h-12 w-12 shrink-0"
                     onClick={() => startEdit(n)}
+                    title="Editar neonato"
                   >
                     <Edit2 size={16} />
                   </Button>
+
+                  {isAdmin && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-12 shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(n)}
+                      title="Eliminar neonato"
+                    >
+                      <Trash2 size={16} />
+                      <span className="ml-2">Eliminar</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             ))
