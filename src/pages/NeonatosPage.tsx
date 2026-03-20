@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { neonatoService, type Neonato } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit2, Search, X } from 'lucide-react';
+import { Plus, Edit2, Search, X, Trash2 } from 'lucide-react';
 
 type NeonatoForm = {
   codigo_rn: string;
@@ -46,6 +47,9 @@ const initialFilters: FilterForm = {
 };
 
 export default function NeonatosPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.rol?.toLowerCase() === 'admin';
+
   const [neonatos, setNeonatos] = useState<Neonato[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -147,8 +151,7 @@ export default function NeonatosPage() {
 
     return neonatos.filter((n) => {
       const matchesSearch =
-        !searchTerm ||
-        n.codigo_rn.toLowerCase().includes(searchTerm);
+        !searchTerm || n.codigo_rn.toLowerCase().includes(searchTerm);
 
       const matchesSexo =
         filters.sexo === 'todos' || n.sexo === filters.sexo;
@@ -230,6 +233,23 @@ export default function NeonatosPage() {
     setError('');
   };
 
+  const handleDelete = async (n: Neonato) => {
+    const confirmed = window.confirm(
+      `¿Seguro que deseas eliminar el neonato ${n.codigo_rn}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setError('');
+      await neonatoService.delete(n.id);
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Error al eliminar neonato');
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -256,6 +276,12 @@ export default function NeonatosPage() {
             Nuevo Neonato
           </Button>
         </div>
+
+        {error && (
+          <div className="p-4 rounded-lg bg-destructive/10 text-destructive font-medium border border-destructive/20">
+            {error}
+          </div>
+        )}
 
         {showForm && (
           <form onSubmit={handleSubmit} className="clinical-card space-y-5">
@@ -387,10 +413,6 @@ export default function NeonatosPage() {
                 />
               </div>
             </div>
-
-            {error && (
-              <p className="text-sm text-destructive font-medium">{error}</p>
-            )}
 
             <div className="flex gap-3">
               <Button
